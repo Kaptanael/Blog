@@ -147,7 +147,6 @@ class Account extends REST_Controller
                     ), REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
                 }
             } else {
-
                 $this->response(array(
                     "message" => "No user found to create password"
                 ), REST_Controller::HTTP_NOT_FOUND);
