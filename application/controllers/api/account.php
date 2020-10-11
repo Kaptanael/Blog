@@ -42,7 +42,7 @@ class Account extends REST_Controller
         $this->form_validation->set_rules("name", "Name", "trim|required|max_length[128]");
         $this->form_validation->set_rules("email", "Email", "trim|required|valid_email|max_length[128]");
         $this->form_validation->set_rules("mobile", "Mobile", "trim|required|max_length[11]");
-        $this->form_validation->set_rules("upazila_id", "Upazila", "trim|required");
+        $this->form_validation->set_rules("upazila_id", "Upazila", "trim|required|integer");
 
         if ($this->form_validation->run() === FALSE) {
 
@@ -58,13 +58,19 @@ class Account extends REST_Controller
                 "upazila_id" => $upazila_id
             );
 
-            if ($this->user_model->insert_user($user)) {
+            try {
+                if ($this->user_model->insert_user($user)) {
 
-                $this->response(array(
-                    "message" => "User has been created"
-                ), REST_Controller::HTTP_CREATED);
-            } else {
+                    $this->response(array(
+                        "message" => "User has been created"
+                    ), REST_Controller::HTTP_CREATED);
+                } else {
 
+                    $this->response(array(
+                        "message" => "Failed to create user"
+                    ), REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
+                }
+            } catch (Exception $e) {
                 $this->response(array(
                     "message" => "Failed to create user"
                 ), REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
@@ -84,7 +90,7 @@ class Account extends REST_Controller
 
             $this->response(array(
                 "message" => $this->form_validation->error_array()
-            ), REST_Controller::HTTP_NOT_FOUND);
+            ), REST_Controller::HTTP_BAD_REQUEST);
         } else {
 
             if (!empty($email) && !empty($password)) {
