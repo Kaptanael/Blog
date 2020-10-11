@@ -39,51 +39,37 @@ class Account extends REST_Controller
         $mobile = $this->security->xss_clean($this->input->post("mobile"));
         $upazila_id = $this->security->xss_clean($this->input->post("upazila_id"));
 
-        $this->form_validation->set_rules("name", "Name", "required");
-        $this->form_validation->set_rules("email", "Email", "required|valid_email");
-        $this->form_validation->set_rules("mobile", "Mobile", "required");
-        $this->form_validation->set_rules("upazila_id", "Upazila", "required");
+        $this->form_validation->set_rules("name", "Name", "trim|required|max_length[128]");
+        $this->form_validation->set_rules("email", "Email", "trim|required|valid_email|max_length[128]");
+        $this->form_validation->set_rules("mobile", "Mobile", "trim|required|max_length[11]");
+        $this->form_validation->set_rules("upazila_id", "Upazila", "trim|required");
 
         if ($this->form_validation->run() === FALSE) {
 
             $this->response(array(
-                "message" => "All fields are required"
-            ), REST_Controller::HTTP_NOT_FOUND);
+                "message" => $this->form_validation->error_array()
+            ), REST_Controller::HTTP_BAD_REQUEST);
         } else {
 
-            if (!empty($name) && !empty($email) && !empty($mobile) && !empty($upazila_id)) {
+            $user = array(
+                "name" => $name,
+                "email" => $email,
+                "mobile" => $mobile,
+                "upazila_id" => $upazila_id
+            );
 
-                $user = array(
-                    "name" => $name,
-                    "email" => $email,
-                    "mobile" => $mobile,
-                    "upazila_id" => $upazila_id
-                );
+            if ($this->user_model->insert_user($user)) {
 
-                if ($this->user_model->insert_user($user)) {
-
-                    $this->response(array(
-                        "message" => "User has been created"
-                    ), REST_Controller::HTTP_CREATED);
-                } else {
-
-                    $this->response(array(
-                        "message" => "Failed to create user"
-                    ), REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
-                }
+                $this->response(array(
+                    "message" => "User has been created"
+                ), REST_Controller::HTTP_CREATED);
             } else {
 
                 $this->response(array(
-                    "message" => "All fields are required"
-                ), REST_Controller::HTTP_NOT_FOUND);
+                    "message" => "Failed to create user"
+                ), REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
             }
         }
-
-        /*$data = json_decode(file_get_contents("php://input"));
-        $name = isset($data->name) ? $data->name : "";
-        $email = isset($data->email) ? $data->email : "";
-        $mobile = isset($data->mobile) ? $data->mobile : "";
-        $upazila_id = isset($data->upazila_id) ? $data->upazila_id : "";*/
     }
 
     public function login_post()
@@ -91,13 +77,13 @@ class Account extends REST_Controller
         $email = $this->security->xss_clean($this->input->post("email"));
         $password =  $this->security->xss_clean($this->input->post("password"));
 
-        $this->form_validation->set_rules("email", "Email", "required|valid_email");
-        $this->form_validation->set_rules("password", "Password", "required");
+        $this->form_validation->set_rules("email", "Email", "trim|required|valid_email|max_length[128]");
+        $this->form_validation->set_rules("password", "Password", "trim|required|max_length[256]");
 
         if ($this->form_validation->run() === FALSE) {
 
             $this->response(array(
-                "message" => "All fields are required"
+                "message" => $this->form_validation->error_array()
             ), REST_Controller::HTTP_NOT_FOUND);
         } else {
 
@@ -117,19 +103,29 @@ class Account extends REST_Controller
 
                     $this->response(array(
                         "message" => "Email or password is incorrect"
-                    ), REST_Controller::HTTP_NOT_FOUND);
+                    ), REST_Controller::HTTP_BAD_REQUEST);
                 }
             }
         }
     }
 
-    public function create_password_put()
+    public function create_password_post()
     {
-        $data = json_decode(file_get_contents("php://input"));
-        $id = isset($data->id) ? $data->id : "";
-        $password = isset($data->password) ? $data->password : "";
+        //$data = json_decode(file_get_contents("php://input"));
+        //$id = isset($data->id) ? $data->id : "";
 
-        if (!empty($id) && !empty($password)) {
+        $id =  $this->security->xss_clean($this->input->post("id"));
+        $password =  $this->security->xss_clean($this->input->post("password"));
+
+        $this->form_validation->set_rules("id", "Id", "trim|required");
+        $this->form_validation->set_rules("password", "Password", "trim|required|max_length[256]");
+
+        if ($this->form_validation->run() === FALSE) {
+
+            $this->response(array(
+                "message" => $this->form_validation->error_array()
+            ), REST_Controller::HTTP_BAD_REQUEST);
+        } else {
 
             if ($this->user_model->is_user_exists($id)) {
 
@@ -150,11 +146,6 @@ class Account extends REST_Controller
                     "message" => "No user found to create password"
                 ), REST_Controller::HTTP_NOT_FOUND);
             }
-        } else {
-
-            $this->response(array(
-                "message" => "All fields are required"
-            ), REST_Controller::HTTP_NOT_FOUND);
         }
     }
 }
